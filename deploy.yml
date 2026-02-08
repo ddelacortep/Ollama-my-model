@@ -1,0 +1,40 @@
+name: Build and Push Custom Ollama
+
+# Controla cuándo se ejecuta el flujo
+on:
+  push:
+    branches: [ "main" ] # Se ejecuta cuando subes cambios a la rama main
+  workflow_dispatch:      # Permite ejecutarlo manualmente desde la pestaña Actions
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descarga el código del repositorio
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Inicia sesión en Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      # 3. Configura Docker Buildx (permite builds más avanzados)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 4. Construye y sube la imagen
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          # Aquí definimos el nombre de la imagen. 
+          # Se etiquetará como 'latest' y también con el ID del commit.
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/ollama-novadynamics:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/ollama-novadynamics:${{ github.sha }}
